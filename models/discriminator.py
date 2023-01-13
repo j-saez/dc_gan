@@ -10,7 +10,7 @@ class Discriminator(nn.Module):
 
         self.model = nn.Sequential(
             conv_block(img_chs,128,kernel_size=4,stride=1,padding=0,norm=True,activation=True,discriminator=True),
-            conv_block(128,256=4,stride=2,padding=1,norm=True,activation=True,discriminator=True),
+            conv_block(128,256,kernel_size=4,stride=2,padding=1,norm=True,activation=True,discriminator=True),
             conv_block(256,512,kernel_size=4,stride=2,padding=1,norm=True,activation=True,discriminator=True),
             conv_block(512,1024,kernel_size=4,stride=2,padding=1,norm=True,activation=True,discriminator=True),
             nn.Conv2d(1024,1,kernel_size=4,stride=2,padding=1,bias=False),
