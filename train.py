@@ -9,6 +9,7 @@ if os.getcwd()[-6:] != 'dc_gan':
 ## IMPORT ##
 ############
 
+import time
 import torch
 import torch.nn as nn
 from utils.params                   import Params
@@ -73,7 +74,9 @@ if __name__ == '__main__':
     # Training loop
     print('\n\nStart of the training process.\n')
     for epoch in range(hyperparms.total_epochs):
+        epoch_init_time = time.perf_counter()
         for batch_idx, (real_imgs, _) in enumerate(train_dataloader):
+            batch_init_time = time.perf_counter()
 
             # Data to device and to proper data type
             real_imgs = real_imgs.to(DEVICE).to(torch.float32)
@@ -98,11 +101,16 @@ if __name__ == '__main__':
             generator.zero_grad()
             loss_generator.backward()
             generator_optimizer.step()
-            
-            if batch_idx % hyperparms.test_after_n_epochs == 0 and epoch !=0:
-                # To be honest, in GANs the loss does not say much 
-                print(f'Epoch {epoch}/{hyperparms.total_epochs} - Batch {batch_idx}/{total_train_baches} - Loss D {loss_disc:.6f} - Loss G {loss_generator:.6f}')
 
+            batch_final_time = time.perf_counter()
+            batch_exec_time = batch_final_time - batch_init_time
+            
+            if batch_idx % hyperparms.test_after_n_epochs == 0 and batch_idx !=0:
+                # To be honest, in GANs the loss does not say much 
+                print(f'Epoch {epoch}/{hyperparms.total_epochs} - Batch {batch_idx}/{total_train_baches} - Loss D {loss_disc:.6f} - Loss G {loss_generator:.6f} - Batch time {batch_exec_time:.6f} s.')
+
+        epoch_final_time = time.perf_counter()
+        epoch_exec_time = epoch_final_time - epoch_init_time
         if epoch % hyperparms.test_after_n_epochs == 0 and epoch !=0:
             # Test model
             with torch.no_grad():
