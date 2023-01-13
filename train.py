@@ -38,12 +38,12 @@ DATASETS_CHS = {'mnist': 1}
 
 if __name__ == '__main__':
 
-    print("Classifier training loop.")
+    print("DCGAN training loop")
 
     # Load params
     print("Loading params")
     hyperparms, dataparams = Params().get_params()
-    print("Params loaded.")
+    print("\tParams loaded.")
 
     # Load the data
     print("Loading dataset")
@@ -51,26 +51,27 @@ if __name__ == '__main__':
     transforms = get_dataset_transforms(img_size, DATASETS_CHS[dataparams.dataset_name])
     train_dataset = load_dataset(dataparams.dataset_name, transforms)
     train_dataloader = DataLoader(train_dataset,hyperparms.batch_size,shuffle=True)
-    print("Dataset loaded.")
+    print("\tDataset loaded.")
 
     # Load the model
     print("Loading the models")
     (img_h, img_w) = img_size
     discriminator = Discriminator(DATASETS_CHS[dataparams.dataset_name],img_h,img_w).to(DEVICE)
     generator = Generator(hyperparms.z_dim, img_chs=DATASETS_CHS[dataparams.dataset_name]).to(DEVICE)
-    print("Models loaded.")
+    print("\tModels loaded.")
 
     # Define optimizer and loss function
     print("Selecting optimizer and loss function")
     discriminator_optimizer = Adam(discriminator.parameters(), lr=hyperparms.lr, betas=(hyperparms.adam_beta1,hyperparms.adam_beta2))
     generator_optimizer = Adam(generator.parameters(), lr=hyperparms.lr, betas=(hyperparms.adam_beta1,hyperparms.adam_beta2))
     criterion = nn.BCELoss()
-    print("Done.")
+    print("\tDone.")
 
     total_train_baches = int(len(train_dataset) / hyperparms.batch_size)
     fixed_noise = torch.rand(hyperparms.batch_size, hyperparms.z_dim,1,1)
 
     # Training loop
+    print('\n\nStart of the training process.\n')
     for epoch in range(hyperparms.total_epochs):
         for batch_idx, (real_imgs, _) in enumerate(train_dataloader):
 
