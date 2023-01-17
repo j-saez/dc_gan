@@ -8,13 +8,13 @@ At the moment DCGAN can only be trained with the MNIST dataset. To do so run:
 ```bash
     cd <root_to_dcgan>/dc_gan
     python train.py
-'''
+```
 
 There are a few hyperparameters you can play with. Run the following command to get information about them:
 
 ```bash
     python train.py --help
-'''
+```
 
 ## Training notes
 
