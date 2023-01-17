@@ -32,22 +32,23 @@ def load_tensorboard_writer(hyperparams, dataset_name, norm):
 def train_discriminator(disc, criterion, disc_opt, real_imgs, fake_imgs):
     disc.zero_grad()
     ## Train discriminator: max log(D(x)) + log(1-D(G(z)))
+
     real_disc_output = disc(real_imgs).reshape(-1)
     loss_real_disc = criterion(real_disc_output, torch.ones_like(real_disc_output))
     loss_real_disc.backward()
+
     fake_disc_output = disc(fake_imgs.detach()).reshape(-1)
     loss_fake_disc = criterion(fake_disc_output, torch.zeros_like(fake_disc_output))
     loss_fake_disc.backward()
+
     loss_disc = (loss_real_disc + loss_fake_disc) / 2.0
     disc_opt.step()
-
     return loss_disc, real_disc_output.mean().item(), fake_disc_output.mean().item()
 
 def train_generator(disc,gen,criterion,gen_opt,fake_imgs):
     gen.zero_grad()
     ## Train generator: min log(1-D(G(z))) <--> max log(D(G(z)))
     fake_disc_output = disc(fake_imgs).reshape(-1)
-    # Multiply to -1 as we want to maximize and optimizer try to minimize loss
     loss_generator = criterion(fake_disc_output, torch.ones_like(fake_disc_output))
     loss_generator.backward()
     gen_opt.step()
@@ -73,8 +74,8 @@ def train_one_epoch(train_dataloader,disc,gen,disc_opt,gen_opt,criterion,hyperpa
         
         if batch_idx % hyperparms.test_after_n_epochs == 0 and batch_idx !=0:
             # To be honest, in GANs the loss does not say much 
-            print(f'Epoch {epoch}/{hyperparms.total_epochs} - Batch {batch_idx}/{total_train_baches} - Loss D {loss_disc:.6f} - Loss G {loss_gen:.6f} - D(x): {d_x:.6f} - D(G(x)): {d_gx1:.6f}/{d_gx2:.6f} - Batch time {batch_exec_time:.6f} s.')
+            print(f'Epoch {epoch}/{hyperparms.total_epochs} - Batch {batch_idx}/{total_train_baches} - Loss D {loss_disc:.6f} - Loss G {loss_gen:.6f} - D(x): {d_x:.6f} - D(G(x))_1: {d_gx1:.6f} - D(G(x))_2: {d_gx2:.6f} - Batch time {batch_exec_time:.6f} s.')
             writer.add_scalars( f'Loss/', {'Gen': loss_gen, 'Disc': loss_disc}, step)
             writer.add_scalars( f'Disc val/', {'D(x)': d_x, 'D(G(x))_1': d_gx1, 'D(G(x))_2': d_gx2}, step)
-        step=step+1
+            step=step+1
     return step

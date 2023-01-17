@@ -57,7 +57,8 @@ if __name__ == '__main__':
     # Load the model
     print("Loading the models")
     (img_h, img_w) = img_size
-    norm = [False,False,False,False,]
+    #norm = [False,False,False,False,]
+    norm = [True,True,True,True]
     discriminator = Discriminator(DATASETS_CHS[dataparams.dataset_name],img_h,img_w,norm_layer_output=norm).to(DEVICE)
     generator = Generator(hyperparms.z_dim, img_chs=DATASETS_CHS[dataparams.dataset_name], norm_layer_output=norm).to(DEVICE)
     print("\tModels loaded.")
@@ -81,10 +82,8 @@ if __name__ == '__main__':
         epoch_init_time = time.perf_counter()
 
         with torch.no_grad():
-            generator.eval()
             test_generated_imgs = generator(fixed_noise)[:16,:,:,:].to('cpu')
-            writer.add_images(f'Generated_images', test_generated_imgs.numpy(), step)
-            generator.train()
+            writer.add_images(f'Generated_images', test_generated_imgs.numpy(), epoch)
 
         step = train_one_epoch(train_dataloader,discriminator,generator,discriminator_optimizer,generator_optimizer,criterion,hyperparms,epoch,total_train_baches,DEVICE,writer,step)
         epoch_exec_time = epoch_init_time - time.perf_counter()
@@ -92,10 +91,8 @@ if __name__ == '__main__':
         if epoch % hyperparms.test_after_n_epochs == 0:
             # Test model
             with torch.no_grad():
-                generator.eval()
                 test_generated_imgs = generator(fixed_noise)[:16,:,:,:].to('cpu')
-                writer.add_images(f'Generated_images', test_generated_imgs.numpy(), epoch)
-                generator.train()
+                writer.add_images(f'Generated_images', test_generated_imgs.numpy(), epoch+1)
                 step = step + 1
                 torch.save(generator.state_dict(), weigths_folder+f'Generator_epoch_{epoch}.pt')
                 torch.save(discriminator.state_dict(), weigths_folder+f'Discriminator_epoch_{epoch}.pt')
