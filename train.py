@@ -1,6 +1,6 @@
 import os
 if os.getcwd()[-6:] != 'dc_gan':
-    message = 'Run the file from the the root:\n'
+    message = 'Run the file from the the root dir:\n'
     message += 'cd dc_gan\n'
     message += 'python train.py'
     raise Exception(message)
@@ -15,10 +15,10 @@ import torch.nn as nn
 from utils.params                   import Params
 from utils.datasets                 import load_dataset, get_dataset_transforms
 from torch.utils.data.dataloader    import DataLoader
-from torch.utils.tensorboard.writer import SummaryWriter
 from models.discriminator           import Discriminator
 from models.generator               import Generator
 from torch.optim                    import Adam
+from utils.training                 import load_tensorboard_writer, train_one_epoch
 
 ###########################
 ## CONSTANTS AND GLOBALS ##
@@ -57,8 +57,9 @@ if __name__ == '__main__':
     # Load the model
     print("Loading the models")
     (img_h, img_w) = img_size
-    discriminator = Discriminator(DATASETS_CHS[dataparams.dataset_name],img_h,img_w).to(DEVICE)
-    generator = Generator(hyperparms.z_dim, img_chs=DATASETS_CHS[dataparams.dataset_name]).to(DEVICE)
+    norm = [False,False,False,False,]
+    discriminator = Discriminator(DATASETS_CHS[dataparams.dataset_name],img_h,img_w,norm_layer_output=norm).to(DEVICE)
+    generator = Generator(hyperparms.z_dim, img_chs=DATASETS_CHS[dataparams.dataset_name], norm_layer_output=norm).to(DEVICE)
     print("\tModels loaded.")
 
     # Define optimizer and loss function
@@ -68,52 +69,34 @@ if __name__ == '__main__':
     criterion = nn.BCELoss()
     print("\tDone.")
 
+    writer, weigths_folder = load_tensorboard_writer(hyperparms, dataparams.dataset_name, norm)
     total_train_baches = int(len(train_dataset) / hyperparms.batch_size)
-    fixed_noise = torch.rand(hyperparms.batch_size, hyperparms.z_dim,1,1)
+    fixed_noise = torch.rand(hyperparms.batch_size, hyperparms.z_dim,1,1).to(DEVICE)
+    step = 0
 
     # Training loop
     print('\n\nStart of the training process.\n')
     for epoch in range(hyperparms.total_epochs):
+
         epoch_init_time = time.perf_counter()
-        for batch_idx, (real_imgs, _) in enumerate(train_dataloader):
-            batch_init_time = time.perf_counter()
 
-            # Data to device and to proper data type
-            real_imgs = real_imgs.to(DEVICE).to(torch.float32)
-            noise = torch.rand(hyperparms.batch_size,hyperparms.z_dim,1,1).to(DEVICE)
-            fake_imgs = generator(noise)
+        with torch.no_grad():
+            generator.eval()
+            test_generated_imgs = generator(fixed_noise)[:16,:,:,:].to('cpu')
+            writer.add_images(f'Generated_images', test_generated_imgs.numpy(), step)
+            generator.train()
 
-            ## Train discriminator: max log(D(x)) + log(1-D(G(z)))
-            real_disc_output = discriminator(real_imgs)
-            loss_real_disc = criterion(real_disc_output, torch.ones_like(real_disc_output))
-            fake_disc_output = discriminator(fake_imgs)
-            loss_fake_disc = criterion(fake_disc_output, torch.zeros_like(real_disc_output))
-            loss_disc = (loss_real_disc + loss_fake_disc) / 2.0
+        step = train_one_epoch(train_dataloader,discriminator,generator,discriminator_optimizer,generator_optimizer,criterion,hyperparms,epoch,total_train_baches,DEVICE,writer,step)
+        epoch_exec_time = epoch_init_time - time.perf_counter()
 
-            discriminator.zero_grad()
-            loss_disc.backward(retain_graph=True)
-            discriminator_optimizer.step()
-
-            ## Train generator: min log(1-D(G(z))) <--> max log(D(G(z)))
-            fake_disc_output = discriminator(fake_imgs)
-            loss_generator = criterion(fake_disc_output, torch.ones_like(fake_disc_output))
-
-            generator.zero_grad()
-            loss_generator.backward()
-            generator_optimizer.step()
-
-            batch_final_time = time.perf_counter()
-            batch_exec_time = batch_final_time - batch_init_time
-            
-            if batch_idx % hyperparms.test_after_n_epochs == 0 and batch_idx !=0:
-                # To be honest, in GANs the loss does not say much 
-                print(f'Epoch {epoch}/{hyperparms.total_epochs} - Batch {batch_idx}/{total_train_baches} - Loss D {loss_disc:.6f} - Loss G {loss_generator:.6f} - Batch time {batch_exec_time:.6f} s.')
-
-        epoch_final_time = time.perf_counter()
-        epoch_exec_time = epoch_final_time - epoch_init_time
-        if epoch % hyperparms.test_after_n_epochs == 0 and epoch !=0:
+        if epoch % hyperparms.test_after_n_epochs == 0:
             # Test model
             with torch.no_grad():
                 generator.eval()
-                test_generated_img = generator(fixed_noise)
+                test_generated_imgs = generator(fixed_noise)[:16,:,:,:].to('cpu')
+                writer.add_images(f'Generated_images', test_generated_imgs.numpy(), epoch)
                 generator.train()
+                step = step + 1
+                torch.save(generator.state_dict(), weigths_folder+f'Generator_epoch_{epoch}.pt')
+                torch.save(discriminator.state_dict(), weigths_folder+f'Discriminator_epoch_{epoch}.pt')
+    print('Training finished.')

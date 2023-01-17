@@ -9,5 +9,5 @@ def conv_block(in_ch,out_ch,kernel_size,stride,padding,norm,activation,discrimin
     if norm:
         layer.append(nn.BatchNorm2d(out_ch))
     if activation:
-        layer.append(nn.ReLU())
+        layer.append(nn.LeakyReLU(0.2))
     return layer
