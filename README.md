@@ -31,5 +31,5 @@ There are a few hyperparameters you can play with. Run the following command to 
 **3. z_dim=100**
 **4. Batch norm applied to all the discriminator and generator layers but the last ones.**
 
-![Original](/images/original.jpeg)
-![Generated](/images/generated.png)
+[Original](/images/original.jpeg)
+[Generated](/images/generated.png)
