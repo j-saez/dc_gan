@@ -2,6 +2,8 @@
 
 This is a pytorch implementation of [DCGAN](https://arxiv.org/abs/1511.06434) to get familiar with the pytorch framekwork and enjoy the process.
 
+The code has been tested with pytorch 1.11.0 and torchvision 0.12.
+
 ## Train DCGAN
 At the moment DCGAN can only be trained with the MNIST dataset. To do so run:
 
