@@ -2,7 +2,18 @@
 
 This is a pytorch implementation of [DCGAN](https://arxiv.org/abs/1511.06434) to get familiar with the pytorch framekwork and enjoy the process.
 
-The code has been tested with pytorch 1.11.0 and torchvision 0.12.
+The code has been tested with pytorch 1.11.0 and torchvision 0.12.0.
+
+## Installation
+
+I recommend to create a virtualenvironment using your favourite tool.
+Remember to activate the virtualenvironment before installing the dependencies if you are going to use one.
+
+```bash
+    git clone https://github.com/j-saez/dc_gan.git
+    cd <root_to_dcgan>/dc_gan
+    pip install -r requierements
+```
 
 ## Train DCGAN
 At the moment DCGAN can only be trained with the MNIST dataset. To do so run:
